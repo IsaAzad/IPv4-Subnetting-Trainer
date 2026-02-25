@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>IPv4 Subnetting Trainer</title>
+  <style>
+    :root{
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,0.06);
+      --panel2: rgba(255,255,255,0.09);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.7);
+      --border: rgba(255,255,255,0.14);
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad:  #ef4444;
+      --accent: #60a5fa;
+      --accent2: #a78bfa;
+      --shadow: 0 12px 40px rgba(0,0,0,0.35);
+      --radius: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background: radial-gradient(1200px 600px at 20% 10%, rgba(96,165,250,0.18), transparent 60%),
+                  radial-gradient(900px 500px at 75% 25%, rgba(167,139,250,0.18), transparent 60%),
+                  radial-gradient(900px 700px at 50% 80%, rgba(34,197,94,0.10), transparent 60%),
+                  var(--bg);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px 18px;
+    }
+
+    .app{
+      width: min(980px, 100%);
+      display:grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 880px){
+      .app{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.05));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .cardHeader{
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap: 12px;
+    }
+
+    .titleWrap h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+    .titleWrap p{
+      margin:6px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .pill{
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(96,165,250,0.15);
+      border: 1px solid rgba(96,165,250,0.30);
+      color: rgba(255,255,255,0.92);
+      white-space:nowrap;
+    }
+
+    .content{
+      padding: 16px 18px 18px;
+    }
+
+    .targetBox{
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .targetLeft{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      min-width: 0;
+    }
+    .label{
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.2px;
+    }
+    .targetValue{
+      font-family: var(--mono);
+      font-size: 18px;
+      letter-spacing: 0.4px;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btnRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.92);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+      user-select:none;
+    }
+    button:hover{ background: rgba(255,255,255,0.09); border-color: rgba(255,255,255,0.20); }
+    button:active{ transform: translateY(1px); }
+    button.primary{
+      background: linear-gradient(135deg, rgba(96,165,250,0.35), rgba(167,139,250,0.25));
+      border-color: rgba(96,165,250,0.35);
+    }
+    button.good{
+      background: rgba(34,197,94,0.12);
+      border-color: rgba(34,197,94,0.35);
+    }
+    button.bad{
+      background: rgba(239,68,68,0.10);
+      border-color: rgba(239,68,68,0.35);
+    }
+    button:disabled{
+      opacity: 0.55;
+      cursor:not-allowed;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .row{
+      display:grid;
+      grid-template-columns: 170px 1fr 110px;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: background .15s ease, border-color .15s ease;
+    }
+    @media (max-width: 520px){
+      .row{
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+
+    .row:hover{
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .rowLabel{
+      font-size: 13px;
+      color: rgba(255,255,255,0.86);
+      display:flex;
+      flex-direction:column;
+      gap: 3px;
+    }
+    .hint{
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    input{
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(0,0,0,0.18);
+      color: rgba(255,255,255,0.95);
+      font-family: var(--mono);
+      font-size: 13px;
+      outline:none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    input:focus{
+      border-color: rgba(96,165,250,0.55);
+      box-shadow: 0 0 0 4px rgba(96,165,250,0.10);
+    }
+
+    .status{
+      font-family: var(--mono);
+      font-size: 12px;
+      text-align:right;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .status.good{ color: rgba(34,197,94,0.95); }
+    .status.bad{ color: rgba(239,68,68,0.95); }
+    .status.warn{ color: rgba(245,158,11,0.95); }
+
+    .sideCard .content{
+      padding-top: 14px;
+    }
+
+    .scoreBox{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin-bottom: 12px;
+    }
+    .stat{
+      flex: 1 1 130px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .stat .k{
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stat .v{
+      margin-top: 6px;
+      font-family: var(--mono);
+      font-size: 18px;
+    }
+
+    .answerPanel{
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px dashed rgba(255,255,255,0.18);
+    }
+    .answerPanel h3{
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.88);
+    }
+    .answers{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+    }
+    @media (max-width: 520px){
+      .answers{ grid-template-columns: 1fr; }
+    }
+    .answers .item{
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.10);
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,0.92);
+    }
+    .answers .item span:first-child{
+      color: rgba(255,255,255,0.70);
+      font-family: var(--sans);
+      font-size: 12px;
+    }
+
+    .note{
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .kbd{
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.9);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- Left: Practice Inputs -->
+    <div class="card">
+      <div class="cardHeader">
+        <div class="titleWrap">
+          <h1>IPv4 Subnetting Trainer</h1>
+          <p>Generate a target IP/CIDR, calculate the subnet details, and test yourself.</p>
+        </div>
+        <div class="pill" id="modePill">Practice Mode</div>
+      </div>
+
+      <div class="content">
+        <div class="targetBox">
+          <div class="targetLeft">
+            <div class="label">Target</div>
+            <div class="targetValue" id="targetText">—</div>
+          </div>
+          <button class="primary" id="btnRandom">Random</button>
+        </div>
+
+        <div class="grid" id="inputGrid">
+          <!-- rows injected -->
+        </div>
+
+        <div class="btnRow">
+          <button class="good" id="btnCheck">Check Answers</button>
+          <button id="btnShow">Show Answers</button>
+          <button class="primary" id="btnNext">Next Problem</button>
+          <button class="bad" id="btnReset">Reset</button>
+        </div>
+
+        <div class="note">
+          Tips: Press <span class="kbd">Enter</span> to check answers. Use <span class="kbd">Tab</span> to move quickly.
+          
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Stats + Answer Key -->
+    <div class="card sideCard">
+      <div class="cardHeader">
+        <div class="titleWrap">
+          <h1>Progress</h1>
+          <p>Track accuracy and reveal the answer key when needed.</p>
+        </div>
+        <div class="pill" id="scorePill">0 / 0 correct</div>
+      </div>
+
+      <div class="content">
+        <div class="scoreBox">
+          <div class="stat">
+            <div class="k">Problems attempted</div>
+            <div class="v" id="statAttempts">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Perfect solves</div>
+            <div class="v" id="statPerfect">0</div>
+          </div>
+          <div class="stat">
+            <div class="k">Last score</div>
+            <div class="v" id="statLast">—</div>
+          </div>
+        </div>
+
+        <div class="answerPanel" id="answerPanel" style="display:none;">
+          <h3>Answer Key</h3>
+          <div class="answers" id="answersGrid"></div>
+        </div>
+
+        <div class="note" id="explainBox">
+          When you click <b>Show Answers</b>, the answer key appears here.
+          You can still type and re-check afterward.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---- Fields user must answer ----
+  const FIELDS = [
+    { key: "network",        label: "Network ID",        },
+    { key: "firstHost",      label: "First Host",      },
+    { key: "lastHost",       label: "Last Host",      },
+    { key: "broadcast",      label: "Broadcast IP",       },
+    { key: "nextSubnet",     label: "Next Subnet",  },
+    { key: "subnetMask",     label: "Subnet Mask",   },
+    { key: "hostsTotal",     label: "# Hosts (Total)", },
+    { key: "hostsUsable",    label: "# Hosts (Usable)", },
+  ];
+
+  const el = (id) => document.getElementById(id);
+
+  const targetText = el("targetText");
+  const inputGrid = el("inputGrid");
+  const answersGrid = el("answersGrid");
+  const answerPanel = el("answerPanel");
+
+  const btnRandom = el("btnRandom");
+  const btnCheck = el("btnCheck");
+  const btnShow = el("btnShow");
+  const btnNext = el("btnNext");
+  const btnReset = el("btnReset");
+
+  const scorePill = el("scorePill");
+  const statAttempts = el("statAttempts");
+  const statPerfect = el("statPerfect");
+  const statLast = el("statLast");
+
+  // ---- State ----
+  let current = null; // { ipStr, prefix, answers:{} }
+  let attempts = 0;
+  let perfect = 0;
+  let lastScore = null;
+
+  // ---- Utilities ----
+  function clamp(n, min, max){ return Math.min(max, Math.max(min, n)); }
+
+  function parseIPv4(str){
+    const s = String(str || "").trim();
+    const parts = s.split(".");
+    if(parts.length !== 4) return null;
+    const octets = parts.map(p => {
+      if(p === "" || !/^\d+$/.test(p)) return null;
+      const v = Number(p);
+      if(v < 0 || v > 255) return null;
+      return v;
+    });
+    if(octets.some(v => v === null)) return null;
+    return octets;
+  }
+
+  function ipToInt(o){
+    // o: [a,b,c,d]
+    return ((o[0] << 24) >>> 0) + (o[1] << 16) + (o[2] << 8) + o[3];
+  }
+
+  function intToIp(n){
+    return [
+      (n >>> 24) & 255,
+      (n >>> 16) & 255,
+      (n >>> 8) & 255,
+      n & 255
+    ].join(".");
+  }
+
+  function prefixToMaskInt(prefix){
+    // 0..32
+    if(prefix === 0) return 0 >>> 0;
+    return (0xFFFFFFFF << (32 - prefix)) >>> 0;
+  }
+
+  function maskIntToDotted(maskInt){
+    return intToIp(maskInt >>> 0);
+  }
+
+  function normalizeIpInput(value){
+    // returns canonical dotted decimal string or null
+    const o = parseIPv4(value);
+    if(!o) return null;
+    return o.join(".");
+  }
+
+  function normalizeNumericInput(value){
+    const s = String(value || "").trim();
+    if(s === "" || !/^\d+$/.test(s)) return null;
+    // avoid huge ints
+    const v = Number(s);
+    if(!Number.isFinite(v)) return null;
+    return String(Math.trunc(v));
+  }
+
+  function makeRandomTarget(){
+    // Avoid very weird practice: keep prefix 8..30 by default, occasionally allow /31,/32
+    const roll = Math.random();
+    let prefix;
+    if(roll < 0.92){
+      prefix = 8 + Math.floor(Math.random() * (30 - 8 + 1)); // 8..30
+    } else if(roll < 0.97){
+      prefix = 31;
+    } else {
+      prefix = 32;
+    }
+
+    // Generate random IP
+    const ip = [
+      Math.floor(Math.random()*256),
+      Math.floor(Math.random()*256),
+      Math.floor(Math.random()*256),
+      Math.floor(Math.random()*256),
+    ];
+
+    // Optional: avoid multicast (224-239) for practice clarity
+    if(ip[0] >= 224 && ip[0] <= 239) ip[0] = 201;
+
+    return { ipStr: ip.join("."), prefix };
+  }
+
+  function calcAnswers(ipStr, prefix){
+    const o = parseIPv4(ipStr);
+    const ipInt = ipToInt(o);
+    const maskInt = prefixToMaskInt(prefix);
+    const networkInt = (ipInt & maskInt) >>> 0;
+    const hostBits = 32 - prefix;
+    const blockSize = hostBits === 32 ? 0x100000000 : (1 << hostBits); // careful: only safe when hostBits <= 31
+    // For hostBits > 31 (prefix 0), handle separately:
+    const totalHosts = (hostBits === 32) ? 4294967296 : Math.pow(2, hostBits);
+
+    // Broadcast and next subnet:
+    const broadcastInt = (prefix === 32) ? networkInt : (networkInt + (totalHosts - 1)) >>> 0;
+    const nextSubnetInt = (prefix === 32) ? ((networkInt + 1) >>> 0) : ((networkInt + totalHosts) >>> 0);
+
+    // First/Last host handling
+    let firstHostInt, lastHostInt, usableHosts;
+
+    if(prefix === 32){
+      // single host route
+      firstHostInt = networkInt;
+      lastHostInt = networkInt;
+      usableHosts = 1;
+    } else if(prefix === 31){
+      // point-to-point: 2 addresses, both usable (RFC 3021)
+      firstHostInt = networkInt;
+      lastHostInt = (networkInt + 1) >>> 0;
+      usableHosts = 2;
+    } else {
+      firstHostInt = (networkInt + 1) >>> 0;
+      lastHostInt = (broadcastInt - 1) >>> 0;
+      usableHosts = Math.max(0, totalHosts - 2);
+    }
+
+    return {
+      network: intToIp(networkInt),
+      firstHost: intToIp(firstHostInt),
+      lastHost: intToIp(lastHostInt),
+      broadcast: intToIp(broadcastInt),
+      nextSubnet: intToIp(nextSubnetInt),
+      subnetMask: maskIntToDotted(maskInt),
+      hostsTotal: String(totalHosts),
+      hostsUsable: String(usableHosts),
+    };
+  }
+
+  // ---- UI building ----
+ function buildRows(){
+  inputGrid.innerHTML = "";
+  for(const f of FIELDS){
+    const row = document.createElement("div");
+    row.className = "row";
+
+    const hintHtml = f.hint ? `<div class="hint">${f.hint}</div>` : "";
+
+    row.innerHTML = `
+      <div class="rowLabel">
+        <div>${f.label}</div>
+        ${hintHtml}
+      </div>
+      <input id="in_${f.key}" autocomplete="off" spellcheck="false"
+             placeholder="${f.key.includes('hosts') ? 'e.g. 256' : 'e.g. 192.168.1.0'}" />
+      <div class="status" id="st_${f.key}">—</div>
+    `;
+    inputGrid.appendChild(row);
+  }
+}
+
+  function clearStatuses(){
+    for(const f of FIELDS){
+      const st = el(`st_${f.key}`);
+      st.className = "status";
+      st.textContent = "—";
+    }
+  }
+
+  function clearInputs(){
+    for(const f of FIELDS){
+      el(`in_${f.key}`).value = "";
+    }
+    clearStatuses();
+  }
+
+  function setTarget(ipStr, prefix){
+    current = {
+      ipStr,
+      prefix,
+      answers: calcAnswers(ipStr, prefix)
+    };
+    targetText.textContent = `${ipStr} /${prefix}`;
+    answerPanel.style.display = "none";
+    answersGrid.innerHTML = "";
+    clearInputs();
+  }
+
+  function fillAnswerKey(){
+    answersGrid.innerHTML = "";
+    for(const f of FIELDS){
+      const item = document.createElement("div");
+      item.className = "item";
+      item.innerHTML = `<span>${f.label}</span><span>${current.answers[f.key]}</span>`;
+      answersGrid.appendChild(item);
+    }
+  }
+
+  function normalizeUserValue(key, raw){
+    if(key === "hostsTotal" || key === "hostsUsable"){
+      return normalizeNumericInput(raw);
+    }
+    return normalizeIpInput(raw);
+  }
+
+  function checkAnswers(){
+    if(!current) return;
+
+    let correctCount = 0;
+
+    for(const f of FIELDS){
+      const input = el(`in_${f.key}`);
+      const st = el(`st_${f.key}`);
+      const expected = current.answers[f.key];
+      const userNorm = normalizeUserValue(f.key, input.value);
+      const expNorm = expected; // already canonical
+
+      if(userNorm === null){
+        st.className = "status warn";
+        st.textContent = "invalid";
+        continue;
+      }
+
+      if(userNorm === expNorm){
+        st.className = "status good";
+        st.textContent = "correct";
+        correctCount++;
+      } else {
+        st.className = "status bad";
+        st.textContent = "wrong";
+      }
+    }
+
+    attempts++;
+    lastScore = `${correctCount} / ${FIELDS.length}`;
+    if(correctCount === FIELDS.length) perfect++;
+
+    statAttempts.textContent = String(attempts);
+    statPerfect.textContent = String(perfect);
+    statLast.textContent = lastScore;
+
+    scorePill.textContent = `${correctCount} / ${FIELDS.length} correct`;
+
+    return correctCount;
+  }
+
+  // ---- Events ----
+  btnRandom.addEventListener("click", () => {
+    const t = makeRandomTarget();
+    setTarget(t.ipStr, t.prefix);
+  });
+
+  btnNext.addEventListener("click", () => {
+    const t = makeRandomTarget();
+    setTarget(t.ipStr, t.prefix);
+  });
+
+  btnReset.addEventListener("click", () => {
+    clearInputs();
+    answerPanel.style.display = "none";
+    answersGrid.innerHTML = "";
+    scorePill.textContent = `0 / 0 correct`;
+    statLast.textContent = "—";
+  });
+
+  btnShow.addEventListener("click", () => {
+    if(!current) return;
+    fillAnswerKey();
+    answerPanel.style.display = "block";
+  });
+
+  btnCheck.addEventListener("click", () => {
+    checkAnswers();
+  });
+
+  // Enter to check (unless user wants a newline — inputs are single-line anyway)
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Enter"){
+      // Don't check if focus is on a button and user intends to click it
+      const active = document.activeElement;
+      if(active && active.tagName === "BUTTON") return;
+      checkAnswers();
+    }
+  });
+
+  // Auto-advance on Enter inside inputs to feel smooth
+  inputGrid.addEventListener("keydown", (e) => {
+    if(e.key !== "Enter") return;
+    const inputs = Array.from(inputGrid.querySelectorAll("input"));
+    const idx = inputs.indexOf(document.activeElement);
+    if(idx >= 0 && idx < inputs.length - 1){
+      e.preventDefault();
+      inputs[idx + 1].focus();
+    }
+  });
+
+  // ---- Init ----
+  buildRows();
+  const start = makeRandomTarget();
+  setTarget(start.ipStr, start.prefix);
+})();
+</script>
+</body>
+</html>
